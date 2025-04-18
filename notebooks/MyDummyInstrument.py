@@ -1,33 +1,62 @@
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
-from qcodes.utils.validators import Numbers, Ints, Bool, Enum
+from qcodes.utils.validators import Bool, Enum, Ints, Numbers
 
 # --- 新增：初始化時移除 DummyInstrument 物件已存在的參數，避免重複註冊 ---
-
 def _clear_all_parameters(inst):
     # 清除 DummyInstrument 物件所有已註冊參數
     for pname in list(inst.parameters.keys()):
-        if pname not in ('IDN',):  # 保留 IDN 參數
+        if pname not in ("IDN",):  # 保留 IDN 參數
             inst.remove_parameter(pname)
 
 # SR860 鎖相放大器
-sr860 = DummyInstrument(name='sr860', gates=['frequency', 'amplitude', 'phase', 'sensitivity', 'time_constant'])
+sr860 = DummyInstrument(
+    name="sr860",
+    gates=["frequency", "amplitude", "phase", "sensitivity", "time_constant"],
+)
 _clear_all_parameters(sr860)
-sr860.add_parameter('X', get_cmd=lambda: 0.0, unit='V')
-sr860.add_parameter('Y', get_cmd=lambda: 0.0, unit='V')
-sr860.add_parameter('R', get_cmd=lambda: 0.0, unit='V')
-sr860.add_parameter('P', get_cmd=lambda: 0.0, unit='deg')
+sr860.add_parameter("X", get_cmd=lambda: 0.0, unit="V")
+sr860.add_parameter("Y", get_cmd=lambda: 0.0, unit="V")
+sr860.add_parameter("R", get_cmd=lambda: 0.0, unit="V")
+sr860.add_parameter("P", get_cmd=lambda: 0.0, unit="deg")
 
 # Keithley 2000 多功能表
-keithley2000 = DummyInstrument(name='keithley2000', gates=['mode'])
+keithley2000 = DummyInstrument(name="keithley2000", gates=["mode"])
 _clear_all_parameters(keithley2000)
-keithley2000.add_parameter('amplitude', get_cmd=lambda: 0.0, unit='arb.unit')
-keithley2000.add_parameter('nplc', initial_value=1.0, set_cmd=lambda v: None, vals=Numbers(min_value=0.01, max_value=10))
-keithley2000.add_parameter('range', initial_value=10.0, set_cmd=lambda v: None, vals=Numbers())
-keithley2000.add_parameter('auto_range_enabled', initial_value=False, set_cmd=lambda v: None, vals=Bool())
-keithley2000.add_parameter('digits', initial_value=6, set_cmd=lambda v: None, vals=Ints(min_value=4, max_value=7))
-keithley2000.add_parameter('averaging_type', initial_value='moving', set_cmd=lambda v: None, vals=Enum('moving', 'repeat'))
-keithley2000.add_parameter('averaging_count', initial_value=10, set_cmd=lambda v: None, vals=Ints(min_value=1, max_value=100))
-keithley2000.add_parameter('averaging_enabled', initial_value=False, set_cmd=lambda v: None, vals=Bool())
+keithley2000.add_parameter("amplitude", get_cmd=lambda: 0.0, unit="arb.unit")
+keithley2000.add_parameter(
+    "nplc",
+    initial_value=1.0,
+    set_cmd=lambda v: None,
+    vals=Numbers(min_value=0.01, max_value=10),
+)
+keithley2000.add_parameter(
+    "range", initial_value=10.0, set_cmd=lambda v: None, vals=Numbers()
+)
+keithley2000.add_parameter(
+    "auto_range_enabled",
+    initial_value=False,
+    set_cmd=lambda v: None,
+    vals=Bool(),
+)
+keithley2000.add_parameter(
+    "digits",
+    initial_value=6,
+    set_cmd=lambda v: None,
+    vals=Ints(min_value=4, max_value=7),
+)
+keithley2000.add_parameter(
+    "averaging_type",
+    initial_value="moving",
+    set_cmd=lambda v: None,
+    vals=Enum("moving", "repeat"),
+)
+keithley2000.add_parameter(
+    "averaging_count",
+    initial_value=10,
+    set_cmd=lambda v: None,
+    vals=Ints(min_value=1, max_value=100),
+)
+keithley2000.add_parameter("averaging_enabled", initial_value=False, set_cmd=lambda v: None, vals=Bool())
 
 # Keithley 2400 源表
 keithley2400 = DummyInstrument(name='keithley2400', gates=['volt', 'curr'])
@@ -64,7 +93,7 @@ sgs100a.add_parameter('IQ_state', initial_value='off', set_cmd=lambda v: None, v
 ivvi = DummyInstrument(name='ivvi', gates=['dac1', 'dac2', 'dac3', 'dac4'])
 _clear_all_parameters(ivvi)
 ivvi.add_parameter('dac_voltages', get_cmd=lambda: [0.0, 0.0, 0.0, 0.0], unit='mV')  # 模擬 DAC 電壓
-ivvi.add_parameter('check_setpoints', initial_value=False, set_cmd=lambda v: None, vals=Bool(), 
+ivvi.add_parameter('check_setpoints', initial_value=False, set_cmd=lambda v: None, vals=Bool(),
                    docstring='Whether to check if the setpoint matches the current DAC value.')
 
 # AMI430 磁場電源
