@@ -1,0 +1,76 @@
+import os
+import sys
+import unittest
+from unittest.mock import patch
+from datetime import date
+from init_database_v4 import get_user_name, get_database_path, init_database
+
+
+class TestInitDatabase(unittest.TestCase):
+    def setUp(self):
+        """測試前準備"""
+        self.test_path = "/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/measurement/sample_test/test001/RT"
+        # 確保測試目錄存在
+        os.makedirs(self.test_path, exist_ok=True)
+        # 確保資料庫目錄存在
+        os.makedirs(
+            "/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/database", exist_ok=True)
+        os.chdir(self.test_path)
+
+    def test_get_user_name(self):
+        """測試取得使用者名稱"""
+        user_name = get_user_name(self.test_path)
+        self.assertEqual(user_name, "Albert")
+
+    def test_get_database_path(self):
+        """測試取得資料庫路徑"""
+        db_path = get_database_path("Albert")
+        expected_path = "/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/database"
+        self.assertEqual(db_path, expected_path)
+
+    @patch('sys.argv', ['script.py', 'False'])
+    def test_init_database_new(self):
+        """測試建立新資料庫"""
+        init_database()
+        today = date.today()
+        expected_db = f"sample_test_test001_RT_{today}_01.db"
+        self.assertTrue(os.path.exists(os.path.join(
+            "/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/database",
+            expected_db
+        )))
+
+    @patch('sys.argv', ['script.py', 'True'])
+    def test_init_database_reuse(self):
+        """測試重用現有資料庫"""
+        # 先建立一個測試用的資料庫檔案 (使用 QCoDeS 函式建立有效的資料庫)
+        from qcodes import initialise_or_create_database_at
+        
+        today = date.today()
+        test_db = f"sample_test_test001_RT_{today}_01.db"
+        test_db_path = os.path.join(
+            "/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/database",
+            test_db
+        )
+        
+        # 建立有效的 SQLite 資料庫
+        initialise_or_create_database_at(test_db_path)
+
+        init_database()
+        # 驗證是否使用現有檔案
+        self.assertTrue(os.path.exists(test_db_path))
+        self.assertEqual(
+            len(os.listdir("/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/database")),
+            1
+        )
+
+    def tearDown(self):
+        """測試後清理"""
+        # 清理測試過程中建立的資料庫檔案
+        db_dir = "/Users/albert-mac/Code/GitHub/Qcodes/user/Albert/database"
+        for f in os.listdir(db_dir):
+            if f.endswith('.db'):
+                os.remove(os.path.join(db_dir, f))
+
+
+if __name__ == '__main__':
+    unittest.main()
