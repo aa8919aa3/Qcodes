@@ -27,7 +27,7 @@ for resource in resources:
         my_device.timeout = 5000
         idn_string = my_device.query('*IDN?')
         print(f"Device: {resource}\nIDN: {idn_string}")
-        
+
         if "KEITHLEY" in idn_string and "MODEL DMM6500" in idn_string:
             DMM6500 = Keithley_6500('DMM6500', resource)
             station.add_component(DMM6500)
@@ -37,20 +37,20 @@ for resource in resources:
             K2000 = Keithley2000('K2000', resource)
             station.add_component(K2000)
             print(f"Added Keithley 2000 at {resource} to the station.")
-            
+
         elif "KEITHLEY" in idn_string and "MODEL 2400" in idn_string:
             K2400 = Keithley2400('K2400', resource)
             station.add_component(K2400)
-        
+
         elif "KEITHLEY" in idn_string and "MODEL 2440" in idn_string:
             K2440 = Keithley2400('K2440', resource)
             station.add_component(K2440)
-            
+
         elif "SR860" in idn_string:
             SR860_1 = SR860('SR860', resource)
             station.add_component(SR860_1)
             print(f"Added SR860_1 at {resource} to the station.")
-            
+
         elif "SMB100A" in idn_string:
             SMB100A = RohdeSchwarzSGS100A('SMB100A', resource)
             station.add_component(SMB100A)
@@ -63,17 +63,17 @@ for resource in resources:
         #         ivvi_device.timeout = 10000
         #         idn_response = ivvi_device.query('*IDN?')  # 嘗試發送 IDN 指令
         #         print(f"IVVI Response: {idn_response}")
-                
+
         #         # 如果 IVVI 有正確回應，則添加到 station
         #         ivvi = IVVI('ivvi', 'ASRL3::INSTR')
         #         station.add_component(ivvi)
         #         print("Added IVVI at ASRL3::INSTR to the station.")
-                
+
         #     except Exception as e:
         #         print(f"Error connecting to IVVI at ASRL3::INSTR: {e}")
         # else:
         #     print("ASRL3::INSTR not found in resource list.")
-        
+
     except Exception as e:
         print(f"Error connecting to {resource}: {e}")
 
@@ -82,6 +82,7 @@ station.add_component(ivvi)
 print("Added IVVI at ASRL3::INSTR to the station.")
 # 指定本地IP地址
 local_ip = '169.254.115.159'
+
 
 def ping_address(ip, port):
     try:
@@ -93,15 +94,17 @@ def ping_address(ip, port):
         print(f"Failed to ping {ip}: {e}")
         return False
 
+
 # 進行 ping 測試
 addresses = ['169.254.115.1', '169.254.115.2', '169.254.115.3']
 ping_results = [ping_address(ip, 7180) for ip in addresses]
 
 if all(ping_results):
-    magnets = [AMI430(name, address=ip, port=7180) for name, ip in zip("xyz", addresses)]
+    magnets = [AMI430(name, address=ip, port=7180)
+               for name, ip in zip("xyz", addresses)]
     for magnet in magnets:
         print(f"{magnet.name}, IP: {magnet._address}, Port: {magnet._port}")
-    
+
     magnet_x, magnet_y, magnet_z = magnets
 
     field_limit = [lambda x, y, z: x < 1 and y < 1 and z < 9]
