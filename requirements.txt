@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.131.0
+hypothesis==6.131.6
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -233,7 +233,7 @@ opentelemetry-api==1.32.1
     #   qcodes
 orderly-set==5.4.0
     # via deepdiff
-packaging==24.2
+packaging==25.0
     # via
     #   qcodes (pyproject.toml)
     #   dask
@@ -365,7 +365,7 @@ snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
     # via hypothesis
-soupsieve==2.6
+soupsieve==2.7
     # via beautifulsoup4
 sphinx==8.2.3
     # via
@@ -468,7 +468,7 @@ typing-extensions==4.13.2
     #   zhinst-toolkit
 tzdata==2025.2
     # via pandas
-uncertainties==3.2.2
+uncertainties==3.2.3
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
