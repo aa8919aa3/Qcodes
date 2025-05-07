@@ -12,7 +12,7 @@ from qcodes.instrument_drivers.Keithley.Keithley_2000 import Keithley2000
 from qcodes.instrument_drivers.Keithley.Keithley_2400 import Keithley2400
 from qcodes.instrument_drivers.tektronix.Keithley_6500 import Keithley_6500
 from qcodes.instrument_drivers.rohde_schwarz.SGS100A import RohdeSchwarzSGS100A
-from qcodes.instrument_drivers.american_magnetics import AMIModel430
+from qcodes.instrument_drivers.american_magnetics.AMI430_visa import AMIModel430, AMIModel4303D
 from qcodes_contrib_drivers.drivers.QuTech.IVVI import IVVI
 
 # 設定記錄器
@@ -63,36 +63,89 @@ def cleanup_station(station: qc.Station) -> None:
 
 
 def scan_and_add_instruments(station: qc.Station) -> None:
-    """掃描可用儀器並將其新增到站點"""
-    rm = pyvisa.ResourceManager()
-    resources = rm.list_resources()
-    log.info(f"Found {len(resources)} VISA resources")
+    """並行掃描可用儀器並將其新增到站點，支援快取與資源篩選"""
+    import threading
+    import re
+    import time
+    import yaml
+    from pathlib import Path
 
-    for resource in resources:
+    CACHE_PATH = Path("instrument_scan_cache.yaml")
+    CACHE_TTL = 60  # 快取有效秒數
+
+    def is_valid_resource(resource):
+        return any(prefix in resource for prefix in ("USB", "GPIB", "ASRL"))
+
+    rm = pyvisa.ResourceManager()
+    resources = [r for r in rm.list_resources() if is_valid_resource(r)]
+    log.info(f"Found {len(resources)} filtered VISA resources")
+
+    # 嘗試讀取快取
+    cache_valid = False
+    if CACHE_PATH.exists():
+        try:
+            with open(CACHE_PATH, 'r') as f:
+                cache = yaml.safe_load(f)
+            if cache and 'timestamp' in cache and time.time() - cache['timestamp'] < CACHE_TTL:
+                log.info("Using cached instrument scan results.")
+                for entry in cache.get('instruments', []):
+                    idn_string = entry['idn']
+                    resource = entry['resource']
+                    for (identifier, (driver_class, default_name)) in INSTRUMENT_IDENTIFIERS.items():
+                        if re.search(identifier, idn_string):
+                            try:
+                                instrument = driver_class(default_name, resource)
+                                station.add_component(instrument)
+                                log.info(f"[CACHE] Added {default_name} ({resource}) to station")
+                            except Exception as e:
+                                log.error(f"[CACHE] Error adding {default_name} ({resource}): {e}")
+                            break
+                cache_valid = True
+        except Exception as e:
+            log.warning(f"Failed to load instrument scan cache: {e}")
+
+    if cache_valid:
+        return
+
+    scan_results = []
+    lock = threading.Lock()
+    threads = []
+
+    def scan_resource(resource):
         try:
             my_device = rm.open_resource(resource)
-            my_device.timeout = 5000
+            my_device.timeout = 1000
             idn_string = my_device.query('*IDN?').strip()
-            log.info(
-                f"Device: {resource}\n"
-                f"IDN: {idn_string}"
-            )
-
-            # 尋找匹配的儀器驅動程式
-            for (
-                identifier, (driver_class, default_name)
-            ) in INSTRUMENT_IDENTIFIERS.items():
-                import re
+            log.info(f"Device: {resource}\nIDN: {idn_string}")
+            with lock:
+                scan_results.append({'resource': resource, 'idn': idn_string})
+            for (identifier, (driver_class, default_name)) in INSTRUMENT_IDENTIFIERS.items():
                 if re.search(identifier, idn_string):
-                    instrument = driver_class(default_name, resource)
-                    station.add_component(instrument)
-                    log.info(f"Added {default_name} ({resource}) to station")
+                    try:
+                        instrument = driver_class(default_name, resource)
+                        station.add_component(instrument)
+                        log.info(f"Added {default_name} ({resource}) to station")
+                    except Exception as e:
+                        log.error(f"Error adding {default_name} ({resource}): {e}")
                     break
             else:
                 log.info(f"Unrecognized instrument: {idn_string}")
-
         except Exception as e:
             log.error(f"Error connecting to {resource}: {e}")
+
+    for resource in resources:
+        t = threading.Thread(target=scan_resource, args=(resource,))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+
+    # 儲存快取
+    try:
+        with open(CACHE_PATH, 'w') as f:
+            yaml.safe_dump({'timestamp': time.time(), 'instruments': scan_results}, f)
+    except Exception as e:
+        log.warning(f"Failed to write instrument scan cache: {e}")
 
 
 def add_ivvi(station: qc.Station, address: str) -> Optional[IVVI]:
@@ -123,7 +176,7 @@ def check_connection(ip: str, port: int, local_ip: str) -> bool:
 
 def add_magnets(
     station: qc.Station, config: Dict
-) -> Optional[AMIModel430.AMIModel430_3D]:
+) -> Optional[AMIModel4303D]:
     """新增磁鐵控制器到站點"""
     magnet_ips = config.get("magnet_ips", [])
     magnet_port = config.get("magnet_port", 7180)
@@ -142,7 +195,7 @@ def add_magnets(
 
     try:
         magnets = [
-            AMIModel430.AMIModel430(name, address=ip, port=magnet_port)
+            AMIModel430(name, address=ip, port=magnet_port)
             for name, ip in zip("xyz", magnet_ips)
         ]
 
@@ -162,8 +215,8 @@ def add_magnets(
 
         field_limit = [field_constraint]
 
-        i3d = AMIModel430.AMIModel430_3D(
-            "AMI430_3D", *magnets, field_limit=field_limit
+        i3d = AMIModel4303D(
+            "AMIModel4303D", *magnets, field_limit=field_limit
         )
 
         for magnet in magnets + [i3d]:
@@ -176,37 +229,37 @@ def add_magnets(
         return None
 
 
-def main() -> qc.Station:
-    """主要執行函式"""
-    # 設定 QCoDeS 記錄器
-    qc.logger.start_logger()
-    log.info("Starting instrument initialization")
 
-    # 載入配置
-    config = load_config()
+"""主要執行函式"""
+# 設定 QCoDeS 記錄器
+qc.logger.start_logger()
+log.info("Starting instrument initialization")
 
-    # 初始化站點
-    station = initialize_station()
+# 載入配置
+config = load_config()
 
-    # 清理現有儀器
-    cleanup_station(station)
+# 初始化站點
+station = initialize_station()
 
-    # 掃描和新增儀器
-    scan_and_add_instruments(station)
+# 清理現有儀器
+cleanup_station(station)
 
-    # 新增 IVVI
-    add_ivvi(station, config.get("ivvi_address", "ASRL3::INSTR"))
+# 掃描和新增儀器
+scan_and_add_instruments(station)
 
-    # 新增磁鐵
-    add_magnets(station, config)
+# 新增 IVVI
+add_ivvi(station, config.get("ivvi_address", "ASRL3::INSTR"))
 
-    # 顯示站點內容
-    log.info("Station instrument list:")
-    for name, component in station.components.items():
-        log.info(f"- {name}: {type(component).__name__}")
+# 新增磁鐵
+add_magnets(station, config)
 
-    return station
+# 顯示站點內容
+log.info("Station instrument list:")
+for name, component in station.components.items():
+    log.info(f"- {name}: {type(component).__name__}")
+# 打印站點列表
 
-
-if __name__ == "__main__":
-    station = main()
+print(f"Station list:")
+for name, instrument in station.components.items():
+    print(f"{instrument}")
+    print(f"{instrument._address}")
