@@ -1,0 +1,30 @@
+# 儀器配置檔
+
+# 網路設定
+local_ip: "169.254.115.159"
+
+# 磁鐵設定
+magnet_ips:
+  - "169.254.115.1"  # x 軸
+  - "169.254.115.2"  # y 軸
+  - "169.254.115.3"  # z 軸
+magnet_port: 7180
+
+# 磁場限制 (Tesla)
+field_limits:
+  x: 1
+  y: 1
+  z: 9
+
+# IVVI 控制器設定
+ivvi_address: "ASRL3::INSTR"
+
+# 預設儀器設定（可擴展）
+default_settings:
+  K2400:
+    source_mode: "current"
+    source_range: 1e-3
+    nplc: 1
+  SR860:
+    time_constant: 1
+    sensitivity: 1
