@@ -27,10 +27,10 @@ def get_user_name(path: Path):
 
 def get_qcodes_root(start_path: Path):
     current = start_path
-    while current.name != "Qcodes" and current != current.parent:
+    while current.name != "Qcodes_Albert" and current != current.parent:
         current = current.parent
-    if current.name != "Qcodes":
-        raise FileNotFoundError("無法從當前路徑往上找到 Qcodes 根目錄")
+    if current.name != "Qcodes_Albert":
+        raise FileNotFoundError("無法從當前路徑往上找到 Qcodes_Albert 根目錄")
     return current
 
 
