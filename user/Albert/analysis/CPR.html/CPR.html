@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>有限動量庫柏配對與約瑟夫森二極體效應資訊圖表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif; 
+            background-color: #073B4C; /* Midnight Green */
+            color: #E0E0E0; /* Light gray for text */
+        }
+        /* Energetic & Playful Palette */
+        .energetic-red { color: #FF6B6B; }
+        .border-energetic-red { border-color: #FF6B6B; }
+        .bg-energetic-red { background-color: #FF6B6B; }
+
+        .energetic-yellow { color: #FFD166; }
+        .border-energetic-yellow { border-color: #FFD166; }
+        .bg-energetic-yellow { background-color: #FFD166; }
+
+        .energetic-green { color: #06D6A0; }
+        .border-energetic-green { border-color: #06D6A0; }
+        .bg-energetic-green { background-color: #06D6A0; }
+
+        .energetic-blue { color: #118AB2; }
+        .border-energetic-blue { border-color: #118AB2; }
+        .bg-energetic-blue { background-color: #118AB2; }
+        
+        .midnight-green-text { color: #073B4C; }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px; 
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+            max-height: 320px;
+        }
+        .heatmap-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 300px; /* Adjust as needed */
+            margin: 1rem auto;
+            border: 1px solid #118AB2;
+            border-radius: 0.5rem;
+        }
+        .heatmap-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.5rem;
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 320px;
+                max-height: 350px;
+            }
+            .heatmap-container {
+                max-width: 450px;
+                height: 350px;
+            }
+        }
+        .card {
+            background-color: #0A4F64; /* Slightly lighter than Midnight Green */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1); /* shadow-lg */
+            padding: 1.5rem; /* p-6 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card-title {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 1rem; /* mb-4 */
+            color: #FFD166; /* energetic-yellow */
+        }
+        .section-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #06D6A0; /* energetic-green */
+            text-align: center;
+            margin-bottom: 2rem; /* mb-8 */
+            padding-top: 1rem;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #073B4C; }
+        ::-webkit-scrollbar-thumb { background: #118AB2; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #06D6A0; }
+
+        .ai-explain-button {
+            background-color: #FF6B6B; /* energetic-red */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.3s;
+            margin-top: 1rem; /* mt-4 */
+            align-self: flex-start;
+        }
+        .ai-explain-button:hover {
+            background-color: #e05252;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.75);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content-container {
+            background-color: #0A4F64;
+            margin: auto;
+            padding: 20px;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .modal-title {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #FFD166; /* energetic-yellow */
+        }
+        .modal-close-button {
+            color: #E0E0E0;
+            font-size: 1.75rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close-button:hover,
+        .modal-close-button:focus {
+            color: #FF6B6B; /* energetic-red */
+            text-decoration: none;
+        }
+        .modal-body {
+            color: #E0E0E0;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #FFD166; /* energetic-yellow */
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+        .legend-color-box {
+            width: 15px;
+            height: 15px;
+            margin: 0 5px;
+            border: 1px solid #555;
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="sticky top-0 bg-opacity-80 backdrop-blur-md bg-[#073B4C] text-white p-3 shadow-xl z-50 border-b border-[#118AB2]/50">
+        <nav class="container mx-auto flex flex-wrap justify-center items-center text-sm md:text-base">
+            <a href="#intro" class="px-3 py-2 hover:text-[#FFD166] transition-colors duration-300 rounded-md">簡介</a>
+            <a href="#symmetry-fmp" class="px-3 py-2 hover:text-[#FFD166] transition-colors duration-300 rounded-md">對稱性與FMP</a>
+            <a href="#single-jj" class="px-3 py-2 hover:text-[#FFD166] transition-colors duration-300 rounded-md">單一JJ效應</a>
+            <a href="#squid-effects" class="px-3 py-2 hover:text-[#FFD166] transition-colors duration-300 rounded-md">SQUID效應</a>
+            <a href="#materials-future" class="px-3 py-2 hover:text-[#FFD166] transition-colors duration-300 rounded-md">材料與未來</a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section id="intro" class="pt-16 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold energetic-yellow mb-4">探索非互易超導的奧秘</h1>
+            <p class="text-xl md:text-2xl text-slate-200 mb-8">有限動量庫柏配對 (FMP) 與約瑟夫森二極體效應 (JDE)</p>
+            <div class="grid md:grid-cols-2 gap-6 items-stretch">
+                <div class="card text-left">
+                    <div>
+                        <h2 class="card-title energetic-green">約瑟夫森二極體效應 (JDE)</h2>
+                        <p class="text-slate-300 mb-2">一種超導元件特性，其中臨界超導電流 ($I_c$) 的大小取決於電流方向，即 $I_{c+} \neq |I_{c-}|$。</p>
+                        <p class="text-slate-300">如同超導電流的整流器，為無耗散超導電子學帶來革命性潛力。</p>
+                        <p class="text-2xl font-bold energetic-red mt-3">$I_{c+} \neq |I_{c-}|$</p>
+                    </div>
+                    <button class="ai-explain-button" data-concept="JDE">✨ AI 解釋此概念</button>
+                </div>
+                <div class="card text-left">
+                    <div>
+                        <h2 class="card-title energetic-blue">有限動量庫柏配對 (FMP)</h2>
+                        <p class="text-slate-300 mb-2">在特定條件下，庫柏對可獲得非零的質心動量 $Q$，導致超導序參量在空間上調製，例如 $\Delta(r) = \Delta_0 e^{iQ \cdot r}$。</p>
+                        <p class="text-slate-300">FMP 是解釋 JDE 的核心機制之一。</p>
+                        <p class="text-2xl font-bold energetic-red mt-3">$Q \neq 0$</p>
+                    </div>
+                     <button class="ai-explain-button" data-concept="FMP">✨ AI 解釋此概念</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="symmetry-fmp" class="pt-16">
+            <h2 class="section-title">JDE的基石：對稱性破壞與FMP機制</h2>
+            <div class="card mb-8">
+                <div>
+                    <h3 class="card-title energetic-red">關鍵的對稱性破壞</h3>
+                    <p class="text-slate-300 mb-4">實現JDE通常需要同時打破：</p>
+                    <div class="flex flex-col md:flex-row justify-around items-center space-y-4 md:space-y-0 md:space-x-4">
+                        <div class="text-center p-4 border-2 border-energetic-yellow rounded-lg w-full md:w-auto">
+                            <p class="text-2xl energetic-yellow mb-2">P</p>
+                            <p class="text-slate-300">空間反演對稱性破壞</p>
+                            <p class="text-xs text-slate-400">(材料固有、元件幾何、外加電場等)</p>
+                        </div>
+                        <div class="text-4xl energetic-green font-bold">&</div>
+                        <div class="text-center p-4 border-2 border-energetic-blue rounded-lg w-full md:w-auto">
+                            <p class="text-2xl energetic-blue mb-2">T</p>
+                            <p class="text-slate-300">時間反演對稱性破壞</p>
+                            <p class="text-xs text-slate-400">(外加磁場、內稟磁性等)</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-300 mt-4 text-center">這些對稱性的破壞為電流的非互易行為提供了基礎。</p>
+                </div>
+                <button class="ai-explain-button" data-concept="SymmetryBreaking">✨ AI 解釋對稱性破壞</button>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">主要的FMP機制</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-300">
+                        <thead class="text-xs text-energetic-green uppercase bg-[#084358]">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">機制</th>
+                                <th scope="col" class="px-4 py-3">典型條件</th>
+                                <th scope="col" class="px-4 py-3">主要特徵</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-[#0E607B]">
+                                <td class="px-4 py-3 font-medium">FFLO態</td>
+                                <td class="px-4 py-3">強磁場，低溫</td>
+                                <td class="px-4 py-3">塞曼效應驅動，序參量空間調製 (平面波/駐波)</td>
+                            </tr>
+                            <tr class="border-b border-[#0E607B]">
+                                <td class="px-4 py-3 font-medium">PDW態</td>
+                                <td class="px-4 py-3">強電子關聯</td>
+                                <td class="px-4 py-3">通常無需外場，與其他有序態共存</td>
+                            </tr>
+                            <tr class="border-b border-[#0E607B]">
+                                <td class="px-4 py-3 font-medium">Altermagnets</td>
+                                <td class="px-4 py-3">Altermagnetic材料</td>
+                                <td class="px-4 py-3">零淨磁化下的FMP，各向異性</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 font-medium">Rashba SOC系統</td>
+                                <td class="px-4 py-3">結構反演不對稱</td>
+                                <td class="px-4 py-3">SOC與磁場共同作用，多軌道效應</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="single-jj" class="pt-16">
+            <h2 class="section-title">JDE對單一約瑟夫森接面(JJ)的影響</h2>
+            <div class="grid md:grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                <div class="card">
+                    <div>
+                        <h3 class="card-title">修正的電流-相位關係 (CPR)</h3>
+                        <p class="text-slate-300 mb-4">JDE導致CPR偏離標準的 $I_s = I_c \sin\phi$：</p>
+                        <ul class="list-disc list-inside text-slate-300 space-y-1">
+                            <li>出現反常相位移 $\phi_0$ ($I_s = I_c \sin(\phi - \phi_0)$)</li>
+                            <li>包含高次諧波 (如 $\sin(2\phi)$)</li>
+                            <li>整體不對稱 $I(\phi) \neq -I(-\phi)$</li>
+                        </ul>
+                    </div>
+                    <div class="chart-container mt-4"><canvas id="cprChart"></canvas></div>
+                    <p class="text-slate-300 mt-4 text-sm">下方熱圖示意CPR ($I_s$)如何隨相位 $\phi$ 和外部參數P (如JDE強度)變化：</p>
+                    <div class="heatmap-container"><canvas id="cprHeatmap" class="heatmap-canvas"></canvas></div>
+                    <div id="cprHeatmapLegend" class="heatmap-legend"></div>
+                </div>
+                <div class="card">
+                    <div>
+                        <h3 class="card-title">不對稱的電流密度 $j_s(x)$</h3>
+                        <p class="text-slate-300 mb-4">FMP的空間調製序參量 ($\Delta(x) \propto e^{iQx}$) 導致電流密度 $j_s(x)$ 在結內不再均勻，呈現振盪或不對稱分佈。</p>
+                    </div>
+                    <div class="chart-container mt-4"><canvas id="jsChart"></canvas></div>
+                    <p class="text-slate-300 mt-4 text-sm">下方熱圖示意電流密度 $j_s(x)$ 如何隨位置 $x$ 和外部參數P變化：</p>
+                    <div class="heatmap-container"><canvas id="jsHeatmap" class="heatmap-canvas"></canvas></div>
+                     <div id="jsHeatmapLegend" class="heatmap-legend"></div>
+                </div>
+                <div class="card">
+                    <div>
+                        <h3 class="card-title">扭曲的弗勞恩霍夫圖樣 $I_c(\Phi)$</h3>
+                        <p class="text-slate-300 mb-4">JDE使 $I_c(\Phi)$ 圖樣：</p>
+                        <ul class="list-disc list-inside text-slate-300 space-y-1">
+                            <li>最大值偏離 $\Phi=0$</li>
+                            <li>圖樣不對稱 ($I_c(\Phi) \neq I_c(-\Phi)$)</li>
+                            <li>節點位置變化，甚至峰分裂</li>
+                            <li>$I_{c+}(\Phi)$ 與 $|I_{c-}(\Phi)|$ 的圖樣不同</li>
+                        </ul>
+                    </div>
+                    <div class="chart-container mt-4"><canvas id="fraunhoferChart"></canvas></div>
+                    <p class="text-slate-300 mt-4 text-sm">下方熱圖示意臨界電流 $I_c(\Phi)$ 如何隨磁通 $\Phi$ 和外部參數P變化：</p>
+                    <div class="heatmap-container"><canvas id="fraunhoferHeatmap" class="heatmap-canvas"></canvas></div>
+                    <div id="fraunhoferHeatmapLegend" class="heatmap-legend"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="squid-effects" class="pt-16">
+            <h2 class="section-title">JDE在直流SQUID中的漣漪</h2>
+            <p class="text-center text-slate-300 mb-6">當SQUID中的JJ具有JDE特性時，其整體量子干涉行為也會顯著改變。下方圖表將示意幾種情況：</p>
+            <div class="card mb-8">
+                <h3 class="card-title energetic-yellow">JDE對SQUID特性的影響分析</h3>
+                <p class="text-slate-300 mb-2">1. <strong class="text-energetic-green">雙相同JJ均具JDE</strong>：若SQUID中兩個相同的JJ都表現出相同的JDE特性（例如，相同的反常相位移 $\phi_0$），SQUID的 $I_c(\Phi_{ext})$ 和 $V(\Phi_{ext})$ 圖樣可能整體發生位移，但仍保持一定的對稱性。然而，如果JDE導致CPR中出現高次諧波，即使兩個JJ相同，圖樣也可能變得更複雜。</p>
+                <p class="text-slate-300 mb-2">2. <strong class="text-energetic-blue">Ic比為2的雙JJ均具JDE</strong>：若SQUID的兩個JJ臨界電流不對稱（例如 $I_{c1} = 2 I_{c2}$），並且一個或兩個JJ都具有JDE，則SQUID的響應不對稱性會更加顯著。JDE與JJ參數的不對稱性疊加，會導致 $I_c(\Phi_{ext})$ 和 $V(\Phi_{ext})$ 圖樣出現更劇烈的扭曲、位移和調制深度變化。這種情況下，正反向臨界電流的差異會更加明顯。</p>
+                <p class="text-slate-300 mt-2">這些效應使得SQUID不僅是靈敏的磁通計，也成為研究JDE和FMP的有力平台。</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6 items-stretch">
+                <div class="card">
+                    <div>
+                        <h3 class="card-title">$I_c(\Phi_{\text{ext}})$ 圖樣修正</h3>
+                        <p class="text-slate-300 mb-4">SQUID的臨界電流調制曲線：</p>
+                        <ul class="list-disc list-inside text-slate-300 space-y-1">
+                            <li>整體圖樣不對稱</li>
+                            <li>極大/極小值位置偏移</li>
+                            <li>調制深度和形狀改變</li>
+                        </ul>
+                    </div>
+                    <div class="chart-container mt-4"><canvas id="squidIcPhiChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div>
+                        <h3 class="card-title">$V(\Phi_{\text{ext}})$ 特性修正</h3>
+                        <p class="text-slate-300 mb-4">SQUID的電壓-磁通特性曲線：</p>
+                        <ul class="list-disc list-inside text-slate-300 space-y-1">
+                            <li>$V(\Phi)$ 曲線不對稱</li>
+                            <li>極小值位置偏移</li>
+                            <li>傳遞函數 $V_\Phi$ 改變</li>
+                            <li>電壓-電流特性(CVC)不對稱</li>
+                        </ul>
+                    </div>
+                    <div class="chart-container mt-4"><canvas id="squidVPhiChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="materials-future" class="pt-16">
+            <h2 class="section-title">潛力材料平台與未來展望</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="card-title">潛力材料平台</h3>
+                    <ul class="space-y-2 text-slate-300">
+                        <li class="flex items-center"><span class="energetic-green mr-2 text-xl">●</span> Rashba系統 (InAs, InSb奈米線, 2DEG)</li>
+                        <li class="flex items-center"><span class="energetic-blue mr-2 text-xl">●</span> 異磁體 (Altermagnets, 如RuO$_2$)</li>
+                        <li class="flex items-center"><span class="energetic-red mr-2 text-xl">●</span> 拓撲材料 (Bi$_2$Se$_3$, 外爾半金屬)</li>
+                        <li class="flex items-center"><span class="energetic-yellow mr-2 text-xl">●</span> 石墨烯 (誘導SOC)</li>
+                        <li class="flex items-center"><span class="text-purple-400 mr-2 text-xl">●</span> 手性/扭轉結構</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">未來應用與挑戰</h3>
+                    <p class="text-slate-300 mb-3"><strong class="energetic-green">潛在應用:</strong></p>
+                    <ul class="list-disc list-inside text-slate-300 space-y-1 mb-4">
+                        <li>拓撲量子計算</li>
+                        <li>超導二極體、整流器</li>
+                        <li>相位電池、記憶單元</li>
+                        <li>自旋電子學器件</li>
+                    </ul>
+                    <p class="text-slate-300 mb-1"><strong class="energetic-red">主要挑戰:</strong></p>
+                    <ul class="list-disc list-inside text-slate-300 space-y-1">
+                        <li>明確識別與表徵JDE/FMP</li>
+                        <li>材料質量與界面控制</li>
+                        <li>理論模型的精進</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card mt-8">
+                <h3 class="card-title energetic-blue">JDE：基礎物理的探針</h3>
+                <p class="text-slate-300">除了應用前景，JDE本身也是一種強大的工具，可用於探測材料的內稟對稱性、電子特性、磁序和拓撲態等基礎物理問題。</p>
+            </div>
+        </section>
+        
+        <footer class="text-center py-12 text-slate-400 border-t border-slate-700 mt-16">
+            <p>&copy; 2025 FMP & JDE 資訊圖表。基於學術研究報告綜合整理。</p>
+        </footer>
+
+    </main>
+
+    <div id="aiExplainModal" class="modal">
+        <div class="modal-content-container">
+            <div class="modal-header">
+                <h3 id="aiModalTitle" class="modal-title">AI 解釋</h3>
+                <span id="closeAiModal" class="modal-close-button">&times;</span>
+            </div>
+            <div id="aiModalBody" class="modal-body">
+                <div id="aiLoadingIndicator" style="display: none;" class="flex items-center justify-center">
+                    <p>正在向 AI 請求解釋，請稍候...</p>
+                    <div class="spinner"></div>
+                </div>
+                <div id="aiResponseArea"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const energeticRed = '#FF6B6B';
+        const energeticYellow = '#FFD166';
+        const energeticGreen = '#06D6A0';
+        const energeticBlue = '#118AB2';
+        const textColor = '#E0E0E0';
+
+        function linspace_js(start, stop, num) {
+            if (typeof num === 'undefined') {
+                num = Math.max(Math.round(stop - start) + 1, 1);
+            }
+            if (num < 2) {
+                return num === 1 ? [start] : [];
+            }
+            var i, ret = Array(num);
+            num--;
+            for (i = num; i >= 0; i--) {
+                ret[i] = (i * stop + (num - i) * start) / num;
+            }
+            return ret;
+        }
+
+        const defaultChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { 
+                    ticks: { color: textColor, font: { size: 10 } }, 
+                    grid: { color: 'rgba(224, 224, 224, 0.1)' } 
+                },
+                y: { 
+                    ticks: { color: textColor, font: { size: 10 } }, 
+                    grid: { color: 'rgba(224, 224, 224, 0.1)' },
+                    beginAtZero: true 
+                }
+            },
+            plugins: {
+                legend: { labels: { color: textColor, font: { size: 12 } } },
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            if (!item || !item.chart || !item.chart.data || !item.chart.data.labels) return '';
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                              return label.join(''); 
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        };
+        
+        // Chart initializations
+        const phiValues = linspace_js(-Math.PI, Math.PI, 100);
+        new Chart(document.getElementById('cprChart'), {
+            type: 'line',
+            data: {
+                labels: phiValues.map(p => (p/Math.PI).toFixed(2) + 'π'),
+                datasets: [
+                    { label: '標準 CPR: $I_c \\sin(\\phi)$', data: phiValues.map(p => Math.sin(p)), borderColor: energeticGreen, borderWidth: 2, tension: 0.1, pointRadius: 0 },
+                    { label: '含$\\phi_0$: $I_c \\sin(\\phi-\\phi_0)$ ($\\phi_0=\\pi/4$)', data: phiValues.map(p => Math.sin(p - Math.PI/4)), borderColor: energeticYellow, borderWidth: 2, tension: 0.1, borderDash: [5, 5], pointRadius: 0 },
+                    { label: '含高次諧波: $\\sin(\\phi)+0.3\\sin(2\\phi)$', data: phiValues.map(p => Math.sin(p) + 0.3*Math.sin(2*p)), borderColor: energeticRed, borderWidth: 2, tension: 0.1, borderDash: [10, 5], pointRadius: 0 }
+                ]
+            },
+            options: { ...defaultChartOptions, scales: { ...defaultChartOptions.scales, y: { ...defaultChartOptions.scales.y, min: -1.5, max: 1.5 } } }
+        });
+
+        const xValues = linspace_js(-1, 1, 100);
+        new Chart(document.getElementById('jsChart'), {
+            type: 'line',
+            data: {
+                labels: xValues.map(x => x.toFixed(2)),
+                datasets: [
+                    { label: '均勻 $j_s(x)$', data: xValues.map(() => 1), borderColor: energeticGreen, borderWidth: 2, tension: 0.1, pointRadius: 0 },
+                    { label: '調製 $j_s(x) \\sim \\cos(Qx)$ (示意)', data: xValues.map(x => Math.cos(2 * Math.PI * x)), borderColor: energeticBlue, borderWidth: 2, tension: 0.1, borderDash: [5,5], pointRadius: 0 },
+                    { label: '不對稱 $j_s(x)$ (示意)', data: xValues.map(x => 0.8 + 0.4 * Math.sin(Math.PI * x)), borderColor: energeticRed, borderWidth: 2, tension: 0.1, borderDash: [2,2], pointRadius: 0 }
+                ]
+            },
+            options: { ...defaultChartOptions, plugins: {...defaultChartOptions.plugins, legend: {...defaultChartOptions.plugins.legend, position: 'top'}}, scales: { ...defaultChartOptions.scales, x: {...defaultChartOptions.scales.x, title: { display: true, text: '結內位置 $x$ (任意單位)', color: textColor}}, y: { ...defaultChartOptions.scales.y, min: -1.2, max: 1.5, title: {display: true, text: '電流密度 $j_s(x)$ (任意單位)', color: textColor}} }}
+        });
+
+        const phiNormValues = linspace_js(-3, 3, 200);
+        const sinc = val => val === 0 ? 1 : Math.sin(Math.PI * val) / (Math.PI * val);
+        new Chart(document.getElementById('fraunhoferChart'), {
+            type: 'line',
+            data: {
+                labels: phiNormValues.map(p => p.toFixed(1)),
+                datasets: [
+                    { label: '標準 $I_c(\\Phi) \\sim |\\text{sinc}(\\pi\\Phi/\\Phi_0)|$', data: phiNormValues.map(p => Math.abs(sinc(p))), borderColor: energeticGreen, borderWidth: 2, tension: 0.1, pointRadius: 0 },
+                    { label: 'JDE扭曲 $I_c(\\Phi)$ (示意: 不對稱/分裂)', data: phiNormValues.map(p => { if (p < 0) return Math.abs(sinc(p*0.8 + 0.3)) * 0.8 * (1 + 0.2*p) ; return Math.abs(sinc(p - 0.2) * 0.6 + sinc(p + 0.2) * 0.4) * (1 - 0.1*p); }), borderColor: energeticRed, borderWidth: 2, tension: 0.1, borderDash: [5,5], pointRadius: 0 }
+                ]
+            },
+            options: { ...defaultChartOptions, plugins: {...defaultChartOptions.plugins, legend: {...defaultChartOptions.plugins.legend, position: 'top'}}, scales: { ...defaultChartOptions.scales, x: {...defaultChartOptions.scales.x, title: { display: true, text: '歸一化磁通 $\\Phi/\\Phi_0$', color: textColor}}, y: { ...defaultChartOptions.scales.y, max:1.2, title: {display: true, text: '臨界電流 $I_c$ (歸一化)', color: textColor}} }}
+        });
+
+        const squidIcPhiChartInstance = new Chart(document.getElementById('squidIcPhiChart'), {
+            type: 'line',
+            data: {
+                labels: phiNormValues.map(p => p.toFixed(1)),
+                datasets: [
+                    { label: '標準 SQUID $I_c(\\Phi) \\sim |\\cos(\\pi\\Phi/\\Phi_0)|$', data: phiNormValues.map(p => Math.abs(Math.cos(Math.PI * p))), borderColor: energeticGreen, borderWidth: 2, tension: 0.1, pointRadius: 0 },
+                    { label: 'JDE (相同JJ, $\\phi_0$位移)', data: phiNormValues.map(p => Math.abs(Math.cos(Math.PI * (p - 0.25)))), borderColor: energeticBlue, borderWidth: 2, tension: 0.1, borderDash: [5,5], pointRadius: 0 },
+                    { label: 'JDE ($I_{c1}=2I_{c2}$, $\\phi_0$位移)', data: phiNormValues.map(p => Math.abs(1.33*Math.cos(Math.PI * (p - 0.15) + Math.PI/6) + 0.66*Math.cos(Math.PI * (-p - 0.15) - Math.PI/6 + 0.3))), borderColor: energeticRed, borderWidth: 2, tension: 0.1, borderDash: [2,2], pointRadius: 0 }
+                ]
+            },
+            options: { ...defaultChartOptions, plugins: {...defaultChartOptions.plugins, legend: {...defaultChartOptions.plugins.legend, position: 'top'}}, scales: { ...defaultChartOptions.scales, x: {...defaultChartOptions.scales.x, title: { display: true, text: '歸一化外部磁通 $\\Phi_{ext}/\\Phi_0$', color: textColor}}, y: { ...defaultChartOptions.scales.y, max:2.0, title: {display: true, text: 'SQUID 臨界電流 $I_c$ (歸一化)', color: textColor}} }}
+        });
+        
+        const squidVPhiChartInstance = new Chart(document.getElementById('squidVPhiChart'), {
+            type: 'line',
+            data: {
+                labels: phiNormValues.map(p => p.toFixed(1)),
+                datasets: [
+                    { label: '標準 SQUID $V(\\Phi)$ (示意)', data: phiNormValues.map(p => 0.5 + 0.5 * Math.cos(2 * Math.PI * p + Math.PI)), borderColor: energeticGreen, borderWidth: 2, tension: 0.1, pointRadius: 0 },
+                    { label: 'JDE (相同JJ, $\\phi_0$位移) $V(\\Phi)$', data: phiNormValues.map(p => 0.5 + 0.5 * Math.cos(2 * Math.PI * (p-0.15) + Math.PI)), borderColor: energeticYellow, borderWidth: 2, tension: 0.1, borderDash: [5,5], pointRadius: 0 },
+                    { label: 'JDE ($I_{c1}=2I_{c2}$, $\\phi_0$位移) $V(\\Phi)$', data: phiNormValues.map(p => 0.5 + 0.5 * Math.cos(2 * Math.PI * (p - 0.25) + Math.PI) * (1 - 0.3*Math.sin(2*Math.PI*p))), borderColor: energeticRed, borderWidth: 2, tension: 0.1, borderDash: [2,2], pointRadius: 0 }
+                ]
+            },
+            options: { ...defaultChartOptions, plugins: {...defaultChartOptions.plugins, legend: {...defaultChartOptions.plugins.legend, position: 'top'}}, scales: { ...defaultChartOptions.scales, x: {...defaultChartOptions.scales.x, title: { display: true, text: '歸一化外部磁通 $\\Phi_{ext}/\\Phi_0$', color: textColor}}, y: { ...defaultChartOptions.scales.y, max:1.2, title: {display: true, text: 'SQUID 電壓 $V$ (歸一化)', color: textColor}} }}
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('header nav a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const headerOffset = document.querySelector('header').offsetHeight;
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
+            });
+        });
+
+        // AI Explanation Modal Logic (same as before)
+        const aiExplainModal = document.getElementById('aiExplainModal');
+        const closeAiModalButton = document.getElementById('closeAiModal');
+        const aiModalTitle = document.getElementById('aiModalTitle');
+        const aiModalBody = document.getElementById('aiModalBody');
+        const aiLoadingIndicator = document.getElementById('aiLoadingIndicator');
+        const aiResponseArea = document.getElementById('aiResponseArea');
+
+        const conceptPrompts = {
+            "JDE": "請用簡潔易懂的中文解釋什麼是「約瑟夫森二極體效應 (JDE)」，包括它的基本原理、物理意義以及在超導領域的重要性。解釋應適合對物理有基本認識但非專業人士的讀者。",
+            "FMP": "請用簡潔易懂的中文解釋什麼是「有限動量庫柏配對 (FMP)」，包括它的基本概念、為何會發生、以及它與傳統庫柏配對的區別。解釋應適合對物理有基本認識但非專業人士的讀者。",
+            "SymmetryBreaking": "請用簡潔易懂的中文解釋在物理學中，特別是在凝態物理和超導領域，「對稱性破壞」是什麼意思？它如何導致新的物理現象，例如約瑟夫森二極體效應？請舉例說明空間反演對稱性(P)和時間反演對稱性(T)的破壞。"
+        };
+
+        document.querySelectorAll('.ai-explain-button').forEach(button => {
+            button.addEventListener('click', async function() {
+                const conceptKey = this.dataset.concept;
+                const promptText = conceptPrompts[conceptKey];
+                
+                if (!promptText) {
+                    console.error("未找到概念的提示詞: ", conceptKey);
+                    aiResponseArea.innerHTML = "<p>抱歉，目前無法解釋這個概念。</p>";
+                    aiExplainModal.style.display = 'flex';
+                    return;
+                }
+
+                aiModalTitle.textContent = `AI 解釋: ${this.closest('.card').querySelector('.card-title, h3').textContent.replace('關鍵的','').trim()}`;
+                aiResponseArea.innerHTML = '';
+                aiLoadingIndicator.style.display = 'flex';
+                aiExplainModal.style.display = 'flex';
+
+                try {
+                    const apiKey = ""; 
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const payload = { contents: [{ role: "user", parts: [{ text: promptText }] }] };
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`API 請求失敗: ${response.status}. ${errorData?.error?.message || '未知錯誤'}`);
+                    }
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                        aiResponseArea.innerHTML = result.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+                    } else {
+                        aiResponseArea.innerHTML = "<p>抱歉，AI 未能提供有效的解釋。</p>";
+                    }
+                } catch (error) {
+                    console.error("呼叫 Gemini API 時發生錯誤:", error);
+                    aiResponseArea.innerHTML = `<p>抱歉，請求 AI 解釋時發生錯誤：${error.message}。</p>`;
+                } finally {
+                    aiLoadingIndicator.style.display = 'none';
+                }
+            });
+        });
+        closeAiModalButton.onclick = function() { aiExplainModal.style.display = "none"; }
+        window.onclick = function(event) { if (event.target == aiExplainModal) { aiExplainModal.style.display = "none"; } }
+
+        // Heatmap drawing functions
+        function drawHeatmap(canvasId, legendId, data, xLabels, yLabels, colorScaleName) {
+            const canvas = document.getElementById(canvasId);
+            const legendContainer = document.getElementById(legendId);
+            if (!canvas || !legendContainer) return;
+            const ctx = canvas.getContext('2d');
+            const numRows = data.length;
+            const numCols = data[0].length;
+            const cellWidth = canvas.width / numCols;
+            const cellHeight = canvas.height / numRows;
+
+            let minVal = Infinity, maxVal = -Infinity;
+            data.forEach(row => row.forEach(val => {
+                if (val < minVal) minVal = val;
+                if (val > maxVal) maxVal = val;
+            }));
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < numRows; i++) { // y-axis (parameter P)
+                for (let j = 0; j < numCols; j++) { // x-axis (phi, x, or Phi)
+                    const value = data[i][j];
+                    const normalizedValue = (maxVal === minVal) ? 0.5 : (value - minVal) / (maxVal - minVal);
+                    ctx.fillStyle = getColor(normalizedValue, colorScaleName);
+                    ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
+                }
+            }
+            legendContainer.innerHTML = `<span>Min: ${minVal.toFixed(2)}</span> <span class="legend-color-box" style="background:${getColor(0, colorScaleName)}"></span> ... <span class="legend-color-box" style="background:${getColor(1, colorScaleName)}"></span> <span>Max: ${maxVal.toFixed(2)}</span>`;
+        }
+        
+        const RdBu_Low = { r: 5, g: 113, b: 176 };   // #0571b0
+        const RdBu_Mid = { r: 247, g: 247, b: 247 }; // #f7f7f7
+        const RdBu_High = { r: 202, g: 0, b: 32 };   // #ca0020
+
+        function getColor(value, scaleName) { // value is 0 to 1
+            if (scaleName === 'RdBu') {
+                let r, g, b;
+                if (value < 0.5) { // Interpolate Low to Mid
+                    const t = value * 2;
+                    r = Math.round(RdBu_Low.r * (1 - t) + RdBu_Mid.r * t);
+                    g = Math.round(RdBu_Low.g * (1 - t) + RdBu_Mid.g * t);
+                    b = Math.round(RdBu_Low.b * (1 - t) + RdBu_Mid.b * t);
+                } else { // Interpolate Mid to High
+                    const t = (value - 0.5) * 2;
+                    r = Math.round(RdBu_Mid.r * (1 - t) + RdBu_High.r * t);
+                    g = Math.round(RdBu_Mid.g * (1 - t) + RdBu_High.g * t);
+                    b = Math.round(RdBu_Mid.b * (1 - t) + RdBu_High.b * t);
+                }
+                return `rgb(${r},${g},${b})`;
+            } else { // Default: Viridis-like (Green (low) -> Yellow (mid) -> Red (high))
+                const r = Math.round(255 * Math.sqrt(value));
+                const g = Math.round(255 * Math.pow(value, 3));
+                const b = Math.round(255 * Math.sin(value * Math.PI / 2));
+                return `rgb(${r},${g},${b})`;
+            }
+        }
+        
+        // Generate Heatmap Data (Illustrative)
+        const heatmapResolutionX = 50; // columns
+        const heatmapResolutionY = 30; // rows
+
+        // 1. CPR Heatmap: Is(phi, P_jde)
+        const cprHeatmapData = [];
+        const phiHeatmapValues = linspace_js(-Math.PI, Math.PI, heatmapResolutionX);
+        const pJdeValues = linspace_js(0, 1, heatmapResolutionY); // Parameter P for JDE strength (0 to 1)
+        for (let i = 0; i < heatmapResolutionY; i++) {
+            const p_jde = pJdeValues[i];
+            const row = phiHeatmapValues.map(phi => Math.sin(phi - p_jde * Math.PI/2) + 0.5 * p_jde * Math.sin(2*phi));
+            cprHeatmapData.push(row);
+        }
+        drawHeatmap('cprHeatmap', 'cprHeatmapLegend', cprHeatmapData, phiHeatmapValues, pJdeValues, 'RdBu');
+
+        // 2. js(x) Heatmap: js(x, P_q)
+        const jsHeatmapData = [];
+        const xHeatmapValues = linspace_js(-1, 1, heatmapResolutionX);
+        const pQValues = linspace_js(0, 2, heatmapResolutionY); // Parameter P for FMP Q strength
+        for (let i = 0; i < heatmapResolutionY; i++) {
+            const p_q = pQValues[i];
+            const row = xHeatmapValues.map(x => Math.cos(p_q * Math.PI * x) * (1 - 0.3 * p_q * x) ); // Introduce asymmetry with p_q
+            jsHeatmapData.push(row);
+        }
+        drawHeatmap('jsHeatmap', 'jsHeatmapLegend', jsHeatmapData, xHeatmapValues, pQValues, 'RdBu');
+
+        // 3. Ic(Phi) Heatmap: Ic(Phi, P_asym)
+        const fraunhoferHeatmapData = [];
+        const phiNormHeatmapValues = linspace_js(-3, 3, heatmapResolutionX);
+        const pAsymValues = linspace_js(0, 0.5, heatmapResolutionY); // Parameter P for asymmetry
+        for (let i = 0; i < heatmapResolutionY; i++) {
+            const p_asym = pAsymValues[i];
+            const row = phiNormHeatmapValues.map(phi_norm => Math.abs(sinc(phi_norm - p_asym)) * (1 - p_asym * Math.sin(phi_norm * Math.PI)));
+            fraunhoferHeatmapData.push(row);
+        }
+        drawHeatmap('fraunhoferHeatmap', 'fraunhoferHeatmapLegend', fraunhoferHeatmapData, phiNormHeatmapValues, pAsymValues, 'RdBu');
+
+        // Ensure MathJax typesets after content is loaded
+        if (typeof MathJax !== "undefined") {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        }
+
+    </script>
+</body>
+</html>
