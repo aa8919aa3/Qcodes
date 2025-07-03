@@ -25,13 +25,7 @@ if qcodes_local_dir:
     fridge_specific_path = os.path.join(qcodes_local_dir, 'fridge_specific')
     sys.path.append(fridge_specific_path)
     
-    # 檢查 init_BF1_v3.py 是否存在於 fridge_specific 資料夾中
-    init_BF1_v3_path = os.path.join(fridge_specific_path, 'init_BF1_v3.py')
-    if os.path.isfile(init_BF1_v3_path):
-        print(f"Found init_BF1_v3.py at: {init_BF1_v3_path}")
-        # exec(open(f'{init_BF1_v3_path}').read())  
-    else:
-        print("init_BF1_v3.py not found in fridge_specific folder.")
+init_BF1_v3_path = "C:/Users/quant/OneDrive/Documents/GitHub/Qcodes_Albert/fridge_specific/B116/init_BF1_v3.py"
 
 if fridge_name == 'Janis':
     exec(open('../../../../../code/fridge_specific/init_Janis.py').read())
